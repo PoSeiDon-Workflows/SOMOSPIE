@@ -102,7 +102,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     year, month, output_file = from_args_to_vars(args)
     
-    sm_files = ['NETCDF:./{0:04d}/{1:02d}_{2:02d}.nc:sm'.format(year, month, day) for day in range(1, calendar.monthrange(year, month)[1] + 1)]
+    sm_files = ['NETCDF:./{0:04d}_{1:02d}_{2:02d}.nc:sm'.format(year, month, day) for day in range(1, calendar.monthrange(year, month)[1] + 1)]
     # average_rasters(sm_files, output_files[month - 1]) # Ignoring pixels with NaNs
     merge_avg(sm_files, output_file)
 
