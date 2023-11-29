@@ -51,8 +51,8 @@ class DataTransformationWorkflow:
         self.soil_moisture_inputs_pfns = []
         for month in range(1, 13):
             for day in range(1, calendar.monthrange(year, month)[1] + 1):
-                file_pfn = f"https://dap.ceda.ac.uk/neodc/esacci/soil_moisture/data/daily_files/COMBINED/{self.version}/2010/ESACCI-SOILMOISTURE-L3S-SSMV-COMBINED-{self.year}{month:02d}{day:02d}00000-fv07.1.nc"
-                file_lfn = f"{self.year}/{month:02d}_{day:02d}.nc"
+                file_pfn = f"https://dap.ceda.ac.uk/neodc/esacci/soil_moisture/data/daily_files/COMBINED/{self.version}/2010/ESACCI-SOILMOISTURE-L3S-SSMV-COMBINED-{self.year}{month:02d}{day:02d}000000-fv07.1.nc"
+                file_lfn = f"{self.year}_{month:02d}_{day:02d}.nc"
                 self.soil_moisture_inputs.append(File(file_lfn))
                 self.soil_moisture_inputs_pfns.append(file_pfn)
 
@@ -72,6 +72,7 @@ class DataTransformationWorkflow:
         self.props = Properties()
 
         self.props["pegasus.transfer.bypass.input.staging"] = "true"
+        self.props["pegasus.transfer.threads"] = "10"
 
         self.props["pegasus.monitord.encoding"] = "json"
         self.props["pegasus.catalog.workflow.amqp.url"] = "amqp://friend:donatedata@msgs.pegasus.isi.edu:5672/prod/workflows"
@@ -104,7 +105,7 @@ class DataTransformationWorkflow:
 
 
     # --- Transformation Catalog (Executables and Containers) ----------------------
-    def create_transformation_catalog(self, target_site="condorpool"):
+    def create_transformation_catalog(self):
         self.tc = TransformationCatalog()
 
         base_container = Container("base-container",
@@ -119,81 +120,64 @@ class DataTransformationWorkflow:
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/merge.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_disk="50GB", request_memory="5GB")
+                container=base_container
+            )
 
         reproject = Transformation(
                 "reproject",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/reproject.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_disk="40GB", request_memory="5GB")
+                container=base_container
+            )
 
         crop = Transformation(
                 "crop",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/crop.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_disk="30GB", request_memory="5GB")
+                container=base_container
+            )
 
         compute = Transformation(
                 "compute",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/compute.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_disk="20GB", request_memory="5GB")
+                container=base_container
+            )
 
         merge_avg = Transformation(
                 "merge_avg",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/merge_avg.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_disk="50GB", request_memory="10GB") # For CONUS@10m 1TB, 20GB
-
+                container=base_container
+            )
 
         get_sm = Transformation(
                 "get_sm",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/get_sm.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_memory="3GB")
+                container=base_container
+            )
 
         generate_train = Transformation(
                 "generate_train",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/generate_train.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_memory="3GB")
+                container=base_container
+            )
 
         generate_eval = Transformation(
                 "generate_eval",
                 site="local",
                 pfn=os.path.join(self.wf_dir, "code/generate_eval.py"),
                 is_stageable=True,
-                container=base_container,
-                arch=Arch.X86_64,
-                os_type=OS.LINUX
-            ).add_profiles(Namespace.CONDOR, request_memory="8GB", request_disk="70GB")
+                container=base_container
+            )
 
         self.tc.add_containers(base_container)
         self.tc.add_transformations(merge, reproject, crop, compute, merge_avg, get_sm, generate_train, generate_eval)
@@ -298,9 +282,11 @@ class DataTransformationWorkflow:
         for month in range(1, 13):
             avg_file = File(f"{month:02d}.tif")
             avg_files.append(avg_file)
+            soil_moisture_inputs_month = [fin for fin in self.soil_moisture_inputs if fin.lfn.startswith(f"{self.year}_{month:02d}_")]
+
             job_get_sm = Job("get_sm")\
                 .add_args("-y", self.year, "-m", month, "-o", avg_file)\
-                .add_inputs(*self.soil_moisture_inputs)\
+                .add_inputs(*self.soil_moisture_inputs_month)\
                 .add_outputs(avg_file, stage_out=True)
 
             self.wf.add_jobs(job_get_sm)
