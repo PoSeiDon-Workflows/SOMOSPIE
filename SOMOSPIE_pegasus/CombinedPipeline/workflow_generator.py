@@ -233,7 +233,7 @@ class DataTransformationWorkflow:
                 slope_tiles.append(File("slope_tile_{0:04d}.tif".format(tile_count)))
 
                 job_crop = Job("crop")\
-                            .add_args("-n", self.n_tiles, "-x", i, "-y", j, "-i", dem_m, "-o", tile)\
+                            .add_args("-n", self.n_tiles**2, "-x", i, "-y", j, "-i", dem_m, "-o", tile)\
                             .add_inputs(dem_m)\
                             .add_outputs(tile, stage_out=True)
 
@@ -307,7 +307,7 @@ class DataTransformationWorkflow:
             eval_file = File('eval.tif')
             eval_file_aux = File("eval.tif.aux.xml")
             job_generate_eval = Job("generate_eval")\
-                    .add_args("-i", *param_files, "-p", *param_names, "-n", self.n_tiles, "-s", shp_file, "-o", eval_file)\
+                    .add_args("-i", *param_files, "-p", *param_names, "-n", self.n_tiles**2, "-s", shp_file, "-o", eval_file)\
                     .add_inputs(*param_files, shp_file)\
                     .add_outputs(eval_file, eval_file_aux, stage_out=True)
             self.wf.add_jobs(job_generate_eval)
@@ -319,7 +319,7 @@ class DataTransformationWorkflow:
                 eval_file = File(eval_path)
                 eval_file_aux = File(eval_path + ".aux.xml")
                 job_generate_eval = Job("generate_eval")\
-                        .add_args("-i", *param_files, "-p", *param_names, "-n", self.n_tiles, "-x", i, "-y", j, "-s", shp_file, "-o", eval_file)\
+                        .add_args("-i", *param_files, "-p", *param_names, "-n", self.n_tiles**2, "-x", i, "-y", j, "-s", shp_file, "-o", eval_file)\
                         .add_inputs(*param_files, shp_file)\
                         .add_outputs(eval_file, eval_file_aux, stage_out=True)
                 self.wf.add_jobs(job_generate_eval)
