@@ -4,13 +4,13 @@ USER root
 
 RUN apt update -qqy && \
     apt-get install -y software-properties-common vim && \
-    apt-get install curl
+    apt-get install -y curl
 
-RUN apt install --no-install-recommends software-properties-common dirmngr && \
+RUN apt install -y --no-install-recommends software-properties-common dirmngr && \
     wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
     add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" && \
     apt-get update && \
-    apt-get upgrade && \
+    apt-get upgrade -y && \
     apt-get install -y r-base-core libgdal-dev libudunits2-dev libssl-dev
     
 RUN apt-get install -y grass grass-doc
