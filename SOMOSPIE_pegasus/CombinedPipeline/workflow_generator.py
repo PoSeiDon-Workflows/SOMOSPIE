@@ -110,7 +110,7 @@ class DataTransformationWorkflow:
 
         base_container = Container("base-container",
             container_type = Container.SINGULARITY if self.singularity else Container.DOCKER,
-            image="docker://olayap/somospie-gdal-netcdf:latest",
+            image="docker://papajim/somospie-gdal-netcdf:20240321",
             image_site="docker_hub"
         )
 
