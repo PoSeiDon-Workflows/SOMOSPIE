@@ -286,7 +286,7 @@ class DataTransformationWorkflow:
 
             job_get_sm = Job("get_sm")\
                 .add_args("-y", self.year, "-m", month, "-o", avg_file)\
-                .add_inputs(*self.soil_moisture_inputs_month)\
+                .add_inputs(*soil_moisture_inputs_month)\
                 .add_outputs(avg_file, stage_out=True)
 
             self.wf.add_jobs(job_get_sm)
